@@ -11,6 +11,27 @@ function localDateTime(hoursFromNow) {
   return new Date(value.getTime() - offset).toISOString().slice(0, 16);
 }
 
+function parseApiDate(value) {
+  const includesTimeZone = /Z$|[+-]\d{2}:\d{2}$/.test(value);
+  return new Date(includesTimeZone ? value : `${value}Z`);
+}
+
+function formatDate(value) {
+  return parseApiDate(value).toLocaleDateString([], {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric"
+  });
+}
+
+function formatTime(value) {
+  return parseApiDate(value).toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit"
+  });
+}
+
 function App() {
   const [resourceId, setResourceId] = useState("room-1");
   const [userId, setUserId] = useState("user-1");
@@ -19,11 +40,12 @@ function App() {
   const [bookings, setBookings] = useState([]);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [listLoading, setListLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  async function loadBookings() {
+  async function loadBookings(showLoading = true) {
     if (!resourceId.trim()) return;
-    setLoading(true);
+    if (showLoading) setListLoading(true);
     setError("");
     try {
       const response = await fetch(`${API}/resource/${encodeURIComponent(resourceId.trim())}`);
@@ -32,19 +54,20 @@ function App() {
     } catch {
       setError("Cannot reach the API. Make sure the backend is running on http://localhost:5295.");
     } finally {
-      setLoading(false);
+      if (showLoading) setListLoading(false);
     }
   }
 
   useEffect(() => {
-    loadBookings();
-  }, []);
+    const timer = window.setTimeout(() => loadBookings(), 300);
+    return () => window.clearTimeout(timer);
+  }, [resourceId]);
 
   async function createBooking(event) {
     event.preventDefault();
     setMessage("");
     setError("");
-    setLoading(true);
+    setSubmitting(true);
     try {
       const response = await fetch(API, {
         method: "POST",
@@ -59,11 +82,11 @@ function App() {
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.error ?? "The booking could not be created.");
       setMessage("Booking created successfully.");
-      await loadBookings();
+      await loadBookings(false);
     } catch (requestError) {
       setError(requestError.message);
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   }
 
@@ -73,7 +96,7 @@ function App() {
       const response = await fetch(`${API}/${id}/cancel`, { method: "POST" });
       if (!response.ok) throw new Error("The booking could not be cancelled.");
       setMessage("Booking cancelled.");
-      await loadBookings();
+      await loadBookings(false);
     } catch (requestError) {
       setError(requestError.message);
     }
@@ -90,11 +113,11 @@ function App() {
           <label>Resource ID<input value={resourceId} onChange={event => setResourceId(event.target.value)} placeholder="room-1" required /></label>
           <label>User ID<input value={userId} onChange={event => setUserId(event.target.value)} placeholder="user-1" required /></label>
           <div className="row"><label>Start time<input type="datetime-local" value={start} onChange={event => setStart(event.target.value)} required /></label><label>End time<input type="datetime-local" value={end} onChange={event => setEnd(event.target.value)} required /></label></div>
-          <button className="primary" type="submit" disabled={loading}>{loading ? "Working..." : "Create booking"}</button>
+          <button className="primary" type="submit" disabled={submitting}>{submitting ? "Creating..." : "Create booking"}</button>
         </form>
         <section className="panel list">
-          <div className="panel-heading list-heading"><div><h2>Bookings</h2><p>Showing bookings for <strong>{resourceId || "this resource"}</strong>.</p></div><button className="secondary" type="button" onClick={loadBookings} disabled={loading}>Refresh</button></div>
-          {loading && bookings.length === 0 ? <p className="empty">Loading bookings...</p> : bookings.length === 0 ? <div className="empty"><span className="empty-icon">0</span><strong>No bookings yet</strong><p>Create the first booking for this resource.</p></div> : <div className="booking-list">{bookings.map(booking => <article className="booking" key={booking.id}><div className="booking-date"><span>{new Date(booking.startDateTime).toLocaleDateString([], { month: "short", day: "numeric" })}</span><strong>{new Date(booking.startDateTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</strong></div><div className="booking-details"><strong>{booking.resourceId}</strong><span>{booking.userId} · until {new Date(booking.endDateTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span></div><div className="booking-actions"><span className={`status ${String(booking.status).toLowerCase()}`}>{booking.status}</span>{booking.status === "Active" && <button className="danger" type="button" onClick={() => cancelBooking(booking.id)}>Cancel</button>}</div></article>)}</div>}
+          <div className="panel-heading list-heading"><div><h2>Bookings for {resourceId || "resource"}</h2><p>The list updates when you change the resource ID.</p></div><span className="count">{bookings.length}</span></div>
+          {listLoading ? <p className="empty">Loading bookings...</p> : bookings.length === 0 ? <div className="empty"><span className="empty-icon">0</span><strong>No bookings found</strong><p>This resource has no booking history yet.</p></div> : <div className="booking-list">{bookings.map(booking => <article className="booking" key={booking.id}><div className="booking-details"><strong>{formatDate(booking.startDateTime)}</strong><span className="time-range">{formatTime(booking.startDateTime)} – {formatTime(booking.endDateTime)}</span><span>Booked by {booking.userId}</span></div><div className="booking-actions"><span className={`status ${String(booking.status).toLowerCase()}`}>{booking.status}</span>{booking.status === "Active" && <button className="danger" type="button" onClick={() => cancelBooking(booking.id)}>Cancel booking</button>}</div></article>)}</div>}
         </section>
       </section>
     </main>
