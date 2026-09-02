@@ -22,7 +22,7 @@ npm install
 npm run dev
 ```
 
-If the API uses a different HTTPS port, update the `API` constant in `frontend/src/main.jsx`.
+The frontend connects to `http://localhost:5295` by default. If the API uses a different address, set the `VITE_API_URL` environment variable.
 
 ### Tests
 

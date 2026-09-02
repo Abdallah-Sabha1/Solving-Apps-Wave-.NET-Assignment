@@ -294,6 +294,11 @@ FakesAssemblies/
 node_modules/
 dist/
 
+# Local SQLite database files
+*.db
+*.db-shm
+*.db-wal
+
 # Visual Studio 6 build log
 *.plg
 
