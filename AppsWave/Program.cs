@@ -11,7 +11,7 @@ builder.Services.AddCors(options => options.AddPolicy("frontend", policy =>
     policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 builder.Services.AddDbContext<AppsWaveDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
-builder.Services.AddScoped<BookingOverlapChecker>();
+builder.Services.AddScoped<BookingOverlapCheckerService>();
 builder.Services.AddScoped<BookingService>();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();

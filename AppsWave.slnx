@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="AppsWave.Tests/AppsWave.Tests.csproj" Id="b796747e-81c6-43d8-b655-df6efd1e24c7" />
   <Project Path="AppsWave/AppsWave.csproj" />
 </Solution>

@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AppsWave.Services;
 
-public class BookingService(AppsWaveDbContext db, BookingOverlapChecker overlapChecker)
+public class BookingService(AppsWaveDbContext db, BookingOverlapCheckerService overlapChecker)
 {
     public async Task<Booking> CreateAsync(Booking booking, CancellationToken cancellationToken)
     {

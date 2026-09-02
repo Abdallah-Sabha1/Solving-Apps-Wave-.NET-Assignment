@@ -3,7 +3,7 @@ using AppsWave.Models;
 
 namespace AppsWave.Services;
 
-public class BookingOverlapChecker
+public class BookingOverlapCheckerService
 {
     public bool Overlapping(Booking currentBook, Booking requestedBook)
     {
